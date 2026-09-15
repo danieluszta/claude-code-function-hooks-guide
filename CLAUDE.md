@@ -22,6 +22,9 @@ Cover, in your own words:
 - Function hooks (beta) can block an action, fix it, answer it, ask the user a
   question with buttons, draw status UI, remember things across restarts, use a
   small model as a judge, and register new tools.
+- Naming: Anthropic's product name for this feature is **Claude Mods**;
+  "function hook" is the implementation primitive Mods are built on. Use
+  "Mods" with the user, but expect the preview tooling to say function hooks.
 - Credit the source: this material comes from Ray Amjad's guest post on
   Jordan Crawford's "On the Edge by Blueprint" newsletter
   (https://edge.blueprintgtm.com/p/claude-code-function-hooks). Mention that the
@@ -52,25 +55,39 @@ more than five in the first session.
 
 ### 4. Build the chosen hooks, one at a time
 
+The builder prompts in the catalog are **specifications, not one-shot
+implementations**. "Run SELECT COUNT before any UPDATE" means something
+different for a Supabase MCP server, a psql CLI call, and a Python script.
+Before implementing anything, inspect the user's actual setup: which tools and
+MCP servers are installed, and what their input schemas look like. Implement
+the intent against those real tools.
+
 For each chosen hook:
 1. Confirm the feature is enabled: Claude Code must have been started with
    `CLAUDE_CODE_ENABLE_FUNCTION_HOOKS=1`. If not, tell the user to restart with
    that variable set — you cannot enable it from inside the session.
-2. Use `/plugin-authoring` with the builder prompt from the catalog, adapted to
+2. Run `/plugin-types` first. It writes the TypeScript declarations for the
+   hook API of the exact installed build. The API is still changing between
+   preview releases — author against these real definitions, not from memory.
+3. Use `/plugin-authoring` with the builder prompt from the catalog, adapted to
    the user's actual tools (their database, their CRM, their vendors).
-3. Ask whether the hook should be project-level (this repo/folder only) or
+4. Ask whether the hook should be project-level (this repo/folder only) or
    user-level (all their projects). Explain the difference in one sentence.
    Safety hooks usually belong at user level.
-4. Remind them to run `/reload-plugins` — without it the hook is not live.
-5. **Test it together.** Propose a harmless action that should trigger the hook
+5. Run `/reload-plugins` — without it the hook is not live. (Skills hot-reload
+   in recent builds; plugins do not reliably, so always reload and verify.)
+6. **Test it together.** Propose a harmless action that should trigger the hook
    and confirm the block/question/UI actually appears. Never declare a safety
    hook done without seeing it fire.
 
 ### 5. Before finishing, always mention the limits
 
 - Function hooks are beta; an update may break them — rebuilding is one prompt.
-- They **fail open**: a crashing hook gets skipped. Hard "never do this" rules
-  should also exist as classic shell hooks (offer to write those too).
+- They can **fail open**: a crashing hook gets skipped. Hard "never do this"
+  rules should also exist as classic PreToolUse shell hooks — offer to write
+  those too, and write them to fail closed: a shell hook only blocks on exit
+  code 2, so every error path in it must explicitly `exit 2` (a crash exiting
+  1 is non-blocking and the action proceeds).
 - Hooks see tool calls, not the inside of long scripts.
 
 ### 6. Offer the meta-move

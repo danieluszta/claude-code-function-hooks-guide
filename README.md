@@ -1,6 +1,6 @@
-# Claude Code Function Hooks — a guided starter
+# Claude Mods (function hooks) — a guided starter
 
-A beginner-friendly guide to **function hooks**, a beta Claude Code feature that turns your safety rules from polite requests into enforced code. This repo is built to be **handed to Claude Code itself**: open it in Claude Code, say *"walk me through this"*, and the agent will explain each hook idea and ask which ones you want before building anything.
+A beginner-friendly guide to **Claude Mods** — the beta Claude Code feature that turns your safety rules from polite requests into enforced code. "Mods" is Anthropic's product name; **function hooks** is the underlying implementation primitive they are built on, and the term you'll see in the preview tooling. Anthropic [committed on September 9, 2026](https://github.com/anthropics/claude-code/issues/91870) to shipping Mods "on the scale of weeks"; until then the preview works behind an environment variable. This repo is built to be **handed to Claude Code itself**: open it in Claude Code, say *"walk me through this"*, and the agent will explain each hook idea and ask which ones you want before building anything.
 
 ## Credit — where this comes from
 
@@ -48,15 +48,18 @@ CLAUDE_CODE_ENABLE_FUNCTION_HOOKS=1 claude
 ```
 
 Then, inside Claude Code:
+- `/plugin-types` — writes the TypeScript declarations for the hook API **of your exact installed build**. Because the API is still moving between preview releases, run this first so hooks get authored against the real, current schemas.
 - `/plugin-authoring` — the skill that writes function hooks from a plain-English description
 - `/reload-plugins` — required after every change; without it nothing happens
+
+So the full loop is: enable Mods → `/plugin-types` → inspect your actual tool schemas → `/plugin-authoring` → build the hook → `/reload-plugins` → deliberately trigger it to verify.
 
 Hooks can live at **project level** (this repo only) or **user level** (every project on your machine). Decide per hook — a database write-gate probably belongs at user level; a project-specific status line does not.
 
 ## Honest limits (from the original post)
 
 - **It's beta.** Shapes may change between releases. If a hook breaks after an update, ask Claude to rebuild it.
-- **Function hooks fail open.** If one crashes, Claude Code skips it, and repeated crashes unload the plugin. Keep your hard "never run this" rules as classic shell hooks too — those fail closed.
+- **Function hooks can fail open.** If one crashes, Claude Code skips it, and repeated crashes unload the plugin. For hard safety invariants, *additionally* keep a classic PreToolUse shell hook — but engineer it to fail closed: a shell hook blocks only when it deliberately exits with code 2. A crash that returns exit code 1 is treated as a non-blocking error and the action proceeds. So every parse/error path in that script must explicitly `exit 2`, never fall through to an ordinary error code.
 - **Hooks have a time budget.** Slow external calls can get cut off (waiting for *your* answer doesn't count).
 - **Hooks see tool calls, not script internals.** A 40-minute script is invisible until it ends. Chunk long jobs into batches, or have the script write a progress file.
 - **Model-judged hooks add latency.** Put them on slow events (turn end, plan submission), not on everything.

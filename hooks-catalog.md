@@ -1,6 +1,6 @@
 # The hooks catalog
 
-Sixteen function-hook ideas, paraphrased from [Ray Amjad's post on On the Edge by Blueprint](https://edge.blueprintgtm.com/p/claude-code-function-hooks). They fall into four jobs: **block the dangerous action, count the spend, show the progress, remember then ask.**
+Sixteen ideas for Claude Mods (function hooks), paraphrased from [Ray Amjad's post on On the Edge by Blueprint](https://edge.blueprintgtm.com/p/claude-code-function-hooks). They fall into four jobs: **block the dangerous action, count the spend, show the progress, remember then ask.**
 
 Each entry has: what it does, why a beginner should care, and a plain-English description you (or your agent) can paste into `/plugin-authoring`.
 
